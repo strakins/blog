@@ -1,8 +1,10 @@
 const HttpError = require("../models/errorModels");
 const bcrypt = require('bcryptjs');
 const User = require('../models/userModels');
-const jwt = require('jsonwebtoken')
-
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
+const {v4: uuid} = require('uuid')
 
 // ==== Register new user .... api/user/register.... unprotected
 
@@ -92,40 +94,105 @@ const getUser = async (req, res, next) => {
 
 // ==== get Reguser .... api/users/change-avatar.... Protected
 const changeAvatar = async (req, res, next) => {
-    res.json("User Avatar Changed");
+    try {
+        if(!req.files.avatar) {
+            return next(new HttpError("Please Choose an Image.", 422))
+        }
+
+        // Find user from db
+        const user = await User.findById(req.user.id)
+        // Delete Avatar
+        if(user.avatar) {
+            fs.unlink(path.join(__dirname, '..', 'uploads', user.avatar), (err) => {
+                if(err) {
+                    return next(new HttpError(err))
+                }
+            })
+        }
+        const {avatar} = req.files
+        // check file size
+        if(avatar.size > 500000) {
+            return next(new HttpError("Profile picture too large"), 422)
+        }
+
+        let fileName;
+        fileName = avatar.name;
+        let splittedFileName = fileName.split('.');
+        let newFileName = splittedFileName[0] + uuid() + '.' + splittedFileName[splittedFileName.length - 1];
+        avatar.mv(path.join(__dirname, '..', 'uploads', newFileName), async (err) => {
+            if(err) {
+                return next(new HttpError(err))
+            }
+
+            const updatedAvatar = await User.findByIdAndUpdate(req.user.id, {avatar: newFileName}, {new: true})
+            if(!updatedAvatar) {
+                return next(new HttpError('Avatar can be Updated', 422))
+            }
+            res.status(200).json(updatedAvatar)
+        })
+    } catch (error) {
+        return next(new HttpError(error));
+    }
 }
-
-
-
-
-
-
 
 
 // ==== Update Reguser .... api/users/:id/edit.... Protected
 
 const updateUser = async (req, res, next) => {
-    res.json("User Account Updated");
+    try {
+        const {name, email, currentPassword, newPassword, confirmNewPassword} = req.body;
+        if(!name || !email || !currentPassword || !newPassword ) {
+            return next(new HttpError("Fill in all Fields"))
+        }
+
+        // get user from db
+        const user = await User.findById(req.user.id);
+        if(!user) {
+            return next(new HttpError("User Not Found", 403))
+        }
+
+        // Ensure new email doesn't exists
+        const emailExists  = await User.findOne({email});
+        if(emailExists && (emailExists._id != req.user.id)) {
+            return next(new HttpError("Email Already registered", 422))
+        }
+
+        // Compare current passwords to db password
+        const validatePassword = await bcrypt.compare(currentPassword, user.password);
+        if(!validatePassword) {
+            next(new HttpError("Current Password is not correct", 422));
+        }
+
+        // Compare newPassword
+        if(newPassword !== confirmNewPassword) {
+            return next(new HttpError("New Passwords do not match", 422));
+        }
+        // Hash new password
+        const salt = await bcrypt.genSalt(12);
+        const hashpass = await bcrypt.hash(newPassword, salt);
+
+        // Update user info
+        const newInfo = await User.findByIdAndUpdate(req.user.id, {name, email, password:hashpass}, {new: true})
+        res.status(200).json(newInfo)
+
+    } catch (error) {
+        return next(new HttpError(error))
+    }
+
+
 }
-
-
-
-
-
-
 
 
 // ==== Get Authors.... api/users/authors.... Unprotected
 
 const getAuthors = async (req, res, next) => {
-    res.json("Authors List");
+    try {
+        const authors = await User.find().select('-password')
+        res.json(authors);
+    } catch (error) {
+        return next(new HttpError(error), 422)
+    }
 }
-
-
-
-
-
-
 
 
 // ==== Delete  user .... api/users/:id/delete.... Protected
