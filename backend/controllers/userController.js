@@ -29,7 +29,7 @@ const registerUser = async (req, res, next) => {
         if(password != password2) {
             return next(new HttpError("Password Does not match", 422))
         }
-
+ 
         const salt = await bcrypt.genSalt(12);
         const hashedPassword = await bcrypt.hash(password, salt);
         const newUser = await User.create({name, email: newEmail, password: hashedPassword});
@@ -111,7 +111,7 @@ const changeAvatar = async (req, res, next) => {
         }
         const {avatar} = req.files
         // check file size
-        if(avatar.size > 500000) {
+        if(avatar.size > 200000) {
             return next(new HttpError("Profile picture too large"), 422)
         }
 
