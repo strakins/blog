@@ -88,10 +88,6 @@ const getUser = async (req, res, next) => {
 }
 
 
-
-
-
-
 // ==== get Reguser .... api/users/change-avatar.... Protected
 const changeAvatar = async (req, res, next) => {
     try {
