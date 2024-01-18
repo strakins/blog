@@ -16,7 +16,7 @@ const app = express();
 
 app.use(express.json({extended: true}));
 app.use(express.urlencoded({extended: true}));
-app.use(cors({credentials: true, origin: "https://strakins-blog.vercel.app/"}));
+app.use(cors({credentials: true, origin: "https://strakins-blog-strakins.vercel.app"}));
 app.use(upload());
 app.use('/uploads', express.static(__dirname + '/uploads'))
 
