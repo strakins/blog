@@ -16,7 +16,7 @@ const app = express();
 
 app.use(express.json({extended: true}));
 app.use(express.urlencoded({extended: true}));
-app.use(cors({credentials: true, origin: "http://localhost:3000"}));
+app.use(cors({credentials: true, origin: "https://blog-strakins.vercel.app"}));
 app.use(upload());
 app.use('/uploads', express.static(__dirname + '/uploads'))
 
@@ -27,5 +27,5 @@ app.use('/api/posts', postRoutes)
 app.use(notFound)
 app.use(errorHandler)
 
-connect(process.env.MONGDB_URI).then(app.listen(5000, () => console.log(`Server Running on port ${process.env.PORT}, Database Connected Successfully`))).catch(error=>(console.log(error)))
+connect(process.env.MONGDB_URI).then(app.listen(process.env.PORT || 5000, () => console.log(`Server Running on port ${process.env.PORT}, Database Connected Successfully`))).catch(error=>(console.log(error)))
 

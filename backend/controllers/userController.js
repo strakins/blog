@@ -89,7 +89,7 @@ const getUser = async (req, res, next) => {
 
 
 // ==== get Reguser .... api/users/change-avatar.... Protected
-const changeAvatar = async (req, res, next) => {
+const changeAvatar = async (req, res, next) => { 
     try {
         if(!req.files.avatar) {
             return next(new HttpError("Please Choose an Image.", 422))
@@ -107,7 +107,7 @@ const changeAvatar = async (req, res, next) => {
         }
         const {avatar} = req.files
         // check file size
-        if(avatar.size > 200000) {
+        if(avatar.size > 5000000) {
             return next(new HttpError("Profile picture too large"), 422)
         }
 
